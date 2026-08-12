@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Order, OrderStatus, IntakeItem } from '../types';
+import React, { useState, useEffect } from "react";
+import { Order, OrderStatus, IntakeItem } from "../types";
 import {
   PackageCheck,
   Truck,
@@ -12,31 +12,31 @@ import {
   ArrowRight,
   ShieldCheck,
   RotateCcw,
-  AlertCircle
-} from 'lucide-react';
+  AlertCircle,
+} from "lucide-react";
 
 interface OrderTrackerProps {
   onReorder: (items: IntakeItem[]) => void;
-  onNavigateTab: (tab: 'voice' | 'catalog' | 'intake' | 'orders') => void;
+  onNavigateTab: (tab: "voice" | "catalog" | "intake" | "orders") => void;
 }
 
 export const OrderTracker: React.FC<OrderTrackerProps> = ({
   onReorder,
-  onNavigateTab
+  onNavigateTab,
 }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<string>("All");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const statusPipeline: OrderStatus[] = [
-    'Submitted',
-    'Credit Approved',
-    'In Production',
-    'Quality Check',
-    'Shipped',
-    'Delivered'
+    "Submitted",
+    "Credit Approved",
+    "In Production",
+    "Quality Check",
+    "Shipped",
+    "Delivered",
   ];
 
   useEffect(() => {
@@ -46,33 +46,50 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/orders');
+      const res = await fetch("/api/orders");
       const data = await res.json();
       setOrders(data.orders || []);
       if (data.orders && data.orders.length > 0) {
         setSelectedOrder(data.orders[0]);
       }
     } catch (err) {
-      console.error('Error fetching orders:', err);
+      console.error("Error fetching orders:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+  const handleUpdateOrderStatus = async (
+    orderId: string,
+    newStatus: OrderStatus,
+  ) => {
     setIsUpdatingStatus(true);
     try {
       const res = await fetch(`/api/orders/${orderId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: newStatus,
-          note: `Real-time database status sync update to ${newStatus}`
-        })
+          note: `Real-time database status sync update to ${newStatus}`,
+        }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to update order status');
+      if (!res.ok)
+        throw new Error(data.error || "Failed to update order status");
+
+      // Track order status update
+      if ((window as any).pendo && data.order) {
+        (window as any).pendo.track("order_status_updated", {
+          order_id: data.order.id,
+          order_number: data.order.orderNumber,
+          previous_status: selectedOrder?.status || "",
+          new_status: newStatus,
+          company_name: data.order.companyName,
+          order_total: data.order.total,
+          item_count: (data.order.items || []).length,
+        });
+      }
 
       // Refresh list
       await fetchOrders();
@@ -84,8 +101,8 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
     }
   };
 
-  const filteredOrders = orders.filter(o => {
-    if (statusFilter === 'All') return true;
+  const filteredOrders = orders.filter((o) => {
+    if (statusFilter === "All") return true;
     return o.status === statusFilter;
   });
 
@@ -102,10 +119,13 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
               </span>
               Direct Database Sync
             </span>
-            <span className="text-xs text-slate-500">Order History & Real-Time Tracking</span>
+            <span className="text-xs text-slate-500">
+              Order History & Real-Time Tracking
+            </span>
           </div>
           <h2 className="text-xl font-bold text-slate-900 mt-1 flex items-center gap-2">
-            <PackageCheck className="w-5 h-5 text-slate-700" /> Commercial Order Fulfillment Tracker
+            <PackageCheck className="w-5 h-5 text-slate-700" /> Commercial Order
+            Fulfillment Tracker
           </h2>
         </div>
 
@@ -124,10 +144,15 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
       ) : orders.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 space-y-3 shadow-sm">
           <PackageCheck className="w-12 h-12 text-slate-400 mx-auto" />
-          <h3 className="font-bold text-slate-800">No active commercial orders found</h3>
-          <p className="text-xs text-slate-500">Create your first hardware intake list to generate a quote and submit an order.</p>
+          <h3 className="font-bold text-slate-800">
+            No active commercial orders found
+          </h3>
+          <p className="text-xs text-slate-500">
+            Create your first hardware intake list to generate a quote and
+            submit an order.
+          </p>
           <button
-            onClick={() => onNavigateTab('catalog')}
+            onClick={() => onNavigateTab("catalog")}
             className="mt-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2 rounded-xl text-xs"
           >
             Start Order Intake
@@ -139,14 +164,16 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
           <div className="space-y-4">
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm text-slate-900">Order History ({orders.length})</h3>
+                <h3 className="font-bold text-sm text-slate-900">
+                  Order History ({orders.length})
+                </h3>
                 <select
                   value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value)}
+                  onChange={(e) => setStatusFilter(e.target.value)}
                   className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
                 >
                   <option value="All">All Statuses</option>
-                  {statusPipeline.map(s => (
+                  {statusPipeline.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
@@ -155,7 +182,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
               </div>
 
               <div className="space-y-2 max-h-[550px] overflow-y-auto pr-1">
-                {filteredOrders.map(order => {
+                {filteredOrders.map((order) => {
                   const isSelected = selectedOrder?.id === order.id;
                   return (
                     <div
@@ -163,22 +190,28 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
                       onClick={() => setSelectedOrder(order)}
                       className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-1.5 ${
                         isSelected
-                          ? 'bg-slate-100/80 border-slate-900 shadow-xs'
-                          : 'bg-slate-50/50 border-slate-200 hover:bg-slate-100/80'
+                          ? "bg-slate-100/80 border-slate-900 shadow-xs"
+                          : "bg-slate-50/50 border-slate-200 hover:bg-slate-100/80"
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-mono font-bold text-slate-900">{order.orderNumber}</span>
+                        <span className="font-mono font-bold text-slate-900">
+                          {order.orderNumber}
+                        </span>
                         <span className="text-[10px] bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
                           {order.status}
                         </span>
                       </div>
 
-                      <div className="text-xs text-slate-900 font-semibold">{order.companyName}</div>
+                      <div className="text-xs text-slate-900 font-semibold">
+                        {order.companyName}
+                      </div>
 
                       <div className="flex items-center justify-between text-[11px] text-slate-500">
                         <span>{order.items.length} SKUs</span>
-                        <strong className="text-emerald-700 font-mono">${order.total.toFixed(2)}</strong>
+                        <strong className="text-emerald-700 font-mono">
+                          ${order.total.toFixed(2)}
+                        </strong>
                       </div>
                     </div>
                   );
@@ -194,23 +227,30 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                   <div>
-                    <span className="text-xs text-slate-500 font-mono">Order Ref: {selectedOrder.orderNumber}</span>
+                    <span className="text-xs text-slate-500 font-mono">
+                      Order Ref: {selectedOrder.orderNumber}
+                    </span>
                     <h3 className="text-lg font-bold text-slate-900 mt-0.5">
                       {selectedOrder.companyName}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Tracking #: <span className="text-slate-800 font-mono">{selectedOrder.trackingNumber}</span> | Payment: {selectedOrder.paymentTerms}
+                      Tracking #:{" "}
+                      <span className="text-slate-800 font-mono">
+                        {selectedOrder.trackingNumber}
+                      </span>{" "}
+                      | Payment: {selectedOrder.paymentTerms}
                     </p>
                   </div>
 
                   <button
                     onClick={() => {
                       onReorder(selectedOrder.items);
-                      onNavigateTab('intake');
+                      onNavigateTab("intake");
                     }}
                     className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shrink-0"
                   >
-                    <RotateCcw className="w-4 h-4 text-amber-700" /> Reorder All Items
+                    <RotateCcw className="w-4 h-4 text-amber-700" /> Reorder All
+                    Items
                   </button>
                 </div>
 
@@ -218,12 +258,16 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span>Fulfillment Stage Pipeline:</span>
-                    <span className="text-emerald-700 font-mono">Status: {selectedOrder.status}</span>
+                    <span className="text-emerald-700 font-mono">
+                      Status: {selectedOrder.status}
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {statusPipeline.map((step, idx) => {
-                      const currentIdx = statusPipeline.indexOf(selectedOrder.status);
+                      const currentIdx = statusPipeline.indexOf(
+                        selectedOrder.status,
+                      );
                       const isCompleted = idx <= currentIdx;
                       const isCurrent = idx === currentIdx;
 
@@ -232,16 +276,18 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
                           key={step}
                           className={`p-2.5 rounded-xl border text-center transition-all ${
                             isCurrent
-                              ? 'bg-slate-900 border-slate-900 text-white font-bold shadow-xs'
+                              ? "bg-slate-900 border-slate-900 text-white font-bold shadow-xs"
                               : isCompleted
-                              ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-medium'
-                              : 'bg-slate-50 border-slate-200 text-slate-400'
+                                ? "bg-emerald-50 border-emerald-200 text-emerald-800 font-medium"
+                                : "bg-slate-50 border-slate-200 text-slate-400"
                           }`}
                         >
                           <div className="text-[10px] uppercase tracking-wider block font-mono">
                             Stage {idx + 1}
                           </div>
-                          <div className="text-[11px] mt-0.5 truncate">{step}</div>
+                          <div className="text-[11px] mt-0.5 truncate">
+                            {step}
+                          </div>
                         </div>
                       );
                     })}
@@ -252,21 +298,28 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-amber-800 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-amber-700" /> Live Warehouse DB Simulator
+                      <ShieldCheck className="w-4 h-4 text-amber-700" /> Live
+                      Warehouse DB Simulator
                     </span>
-                    <span className="text-[10px] text-slate-500">Click to update status in database:</span>
+                    <span className="text-[10px] text-slate-500">
+                      Click to update status in database:
+                    </span>
                   </div>
 
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {statusPipeline.map(st => (
+                    {statusPipeline.map((st) => (
                       <button
                         key={st}
-                        disabled={isUpdatingStatus || selectedOrder.status === st}
-                        onClick={() => handleUpdateOrderStatus(selectedOrder.id, st)}
+                        disabled={
+                          isUpdatingStatus || selectedOrder.status === st
+                        }
+                        onClick={() =>
+                          handleUpdateOrderStatus(selectedOrder.id, st)
+                        }
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                           selectedOrder.status === st
-                            ? 'bg-slate-900 text-white shadow-xs'
-                            : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                            ? "bg-slate-900 text-white shadow-xs"
+                            : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
                         }`}
                       >
                         Set: {st}
@@ -277,7 +330,9 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
 
                 {/* Itemized Table in Order */}
                 <div className="space-y-2">
-                  <h4 className="font-bold text-xs text-slate-800">Order Items:</h4>
+                  <h4 className="font-bold text-xs text-slate-800">
+                    Order Items:
+                  </h4>
                   <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden text-xs">
                     <table className="w-full text-left">
                       <thead>
@@ -292,11 +347,19 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
                       <tbody className="divide-y divide-slate-200 text-slate-800">
                         {selectedOrder.items.map((item, idx) => (
                           <tr key={idx}>
-                            <td className="p-2.5 font-mono text-slate-900 font-bold">{item.sku}</td>
+                            <td className="p-2.5 font-mono text-slate-900 font-bold">
+                              {item.sku}
+                            </td>
                             <td className="p-2.5">{item.name}</td>
-                            <td className="p-2.5 text-center">{item.selectedFinish}</td>
-                            <td className="p-2.5 text-center font-bold">{item.quantity}</td>
-                            <td className="p-2.5 text-right font-mono font-bold">${item.totalPrice.toFixed(2)}</td>
+                            <td className="p-2.5 text-center">
+                              {item.selectedFinish}
+                            </td>
+                            <td className="p-2.5 text-center font-bold">
+                              {item.quantity}
+                            </td>
+                            <td className="p-2.5 text-right font-mono font-bold">
+                              ${item.totalPrice.toFixed(2)}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -307,16 +370,26 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
                 {/* Status History Audit Log */}
                 <div className="space-y-2 pt-2 border-t border-slate-200">
                   <h4 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-slate-700" /> Database Audit Logs & Warehouse History
+                    <Clock className="w-3.5 h-3.5 text-slate-700" /> Database
+                    Audit Logs & Warehouse History
                   </h4>
                   <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
                     {selectedOrder.statusHistory.map((log, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-slate-700 border-b border-slate-200 pb-2 last:border-none last:pb-0">
+                      <div
+                        key={idx}
+                        className="flex items-start gap-2.5 text-slate-700 border-b border-slate-200 pb-2 last:border-none last:pb-0"
+                      >
                         <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
                         <div>
-                          <div className="font-bold text-slate-900">{log.status}</div>
-                          <div className="text-[11px] text-slate-600">{log.note}</div>
-                          <div className="text-[10px] text-slate-400">{new Date(log.timestamp).toLocaleString()}</div>
+                          <div className="font-bold text-slate-900">
+                            {log.status}
+                          </div>
+                          <div className="text-[11px] text-slate-600">
+                            {log.note}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </div>
                         </div>
                       </div>
                     ))}

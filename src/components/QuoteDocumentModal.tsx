@@ -1,5 +1,5 @@
-import React from 'react';
-import { Quote, User } from '../types';
+import React from "react";
+import { Quote, User } from "../types";
 import {
   FileText,
   Printer,
@@ -9,8 +9,8 @@ import {
   ShieldCheck,
   Calendar,
   X,
-  Send
-} from 'lucide-react';
+  Send,
+} from "lucide-react";
 
 interface QuoteDocumentModalProps {
   quote: Quote;
@@ -23,9 +23,21 @@ export const QuoteDocumentModal: React.FC<QuoteDocumentModalProps> = ({
   quote,
   currentUser,
   onClose,
-  onSubmitOrder
+  onSubmitOrder,
 }) => {
   const handlePrint = () => {
+    // Track quote print/save action
+    if ((window as any).pendo) {
+      (window as any).pendo.track("quote_printed", {
+        quote_id: quote.id,
+        quote_number: quote.quoteNumber,
+        grand_total: quote.grandTotal,
+        item_count: quote.items.length,
+        company_name: quote.companyName,
+        payment_terms: quote.paymentTerms,
+      });
+    }
+
     window.print();
   };
 
@@ -36,9 +48,12 @@ export const QuoteDocumentModal: React.FC<QuoteDocumentModalProps> = ({
         <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Official Automated B2B Quote
+              <CheckCircle2 className="w-3.5 h-3.5" /> Official Automated B2B
+              Quote
             </span>
-            <span className="text-slate-500 text-xs font-mono">{quote.quoteNumber}</span>
+            <span className="text-slate-500 text-xs font-mono">
+              {quote.quoteNumber}
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -58,7 +73,10 @@ export const QuoteDocumentModal: React.FC<QuoteDocumentModalProps> = ({
         </div>
 
         {/* Official Printable Quote Document Canvas */}
-        <div className="p-8 bg-white text-slate-900 print:p-0 print:m-0" id="printable-quote">
+        <div
+          className="p-8 bg-white text-slate-900 print:p-0 print:m-0"
+          id="printable-quote"
+        >
           {/* Document Header */}
           <div className="flex items-start justify-between border-b-2 border-slate-900 pb-6">
             <div>
@@ -66,21 +84,39 @@ export const QuoteDocumentModal: React.FC<QuoteDocumentModalProps> = ({
                 <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-extrabold flex items-center justify-center text-base">
                   APX
                 </div>
-                <h1 className="text-2xl font-black tracking-tight text-slate-900">APEX HARDWARE MFG</h1>
+                <h1 className="text-2xl font-black tracking-tight text-slate-900">
+                  APEX HARDWARE MFG
+                </h1>
               </div>
               <p className="text-xs text-slate-600 mt-1">
-                Industrial Hardware & Assembly Components Division<br />
-                100 Apex Boulevard, Suite 400 | Grand Rapids, MI 49512<br />
+                Industrial Hardware & Assembly Components Division
+                <br />
+                100 Apex Boulevard, Suite 400 | Grand Rapids, MI 49512
+                <br />
                 Tel: +1 (800) 555-APEX | orders@apexhardwaremfg.com
               </p>
             </div>
 
             <div className="text-right">
-              <h2 className="text-2xl font-bold text-slate-800 uppercase tracking-wide">QUOTATION</h2>
+              <h2 className="text-2xl font-bold text-slate-800 uppercase tracking-wide">
+                QUOTATION
+              </h2>
               <div className="text-xs text-slate-600 font-mono mt-1 space-y-0.5">
-                <div>Quote Ref #: <strong>{quote.quoteNumber}</strong></div>
-                <div>Date: <strong>{new Date(quote.createdAt).toLocaleDateString()}</strong></div>
-                <div>Valid Until: <strong>{new Date(quote.validUntil).toLocaleDateString()}</strong></div>
+                <div>
+                  Quote Ref #: <strong>{quote.quoteNumber}</strong>
+                </div>
+                <div>
+                  Date:{" "}
+                  <strong>
+                    {new Date(quote.createdAt).toLocaleDateString()}
+                  </strong>
+                </div>
+                <div>
+                  Valid Until:{" "}
+                  <strong>
+                    {new Date(quote.validUntil).toLocaleDateString()}
+                  </strong>
+                </div>
               </div>
             </div>
           </div>
@@ -88,34 +124,52 @@ export const QuoteDocumentModal: React.FC<QuoteDocumentModalProps> = ({
           {/* Customer & Shipping Meta Info */}
           <div className="grid grid-cols-2 gap-6 py-6 border-b border-slate-200 text-xs">
             <div>
-              <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">Customer / Bill To:</span>
-              <strong className="text-sm font-bold text-slate-900 block">{quote.companyName}</strong>
+              <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Customer / Bill To:
+              </span>
+              <strong className="text-sm font-bold text-slate-900 block">
+                {quote.companyName}
+              </strong>
               <div className="text-slate-700 mt-1">
-                Attn: {currentUser.name}<br />
-                {currentUser.address.street}<br />
-                {currentUser.address.city}, {currentUser.address.state} {currentUser.address.zip}<br />
+                Attn: {currentUser.name}
+                <br />
+                {currentUser.address.street}
+                <br />
+                {currentUser.address.city}, {currentUser.address.state}{" "}
+                {currentUser.address.zip}
+                <br />
                 Email: {currentUser.email} | Phone: {currentUser.phone}
               </div>
             </div>
 
             <div>
-              <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">Commercial Account Terms:</span>
+              <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Commercial Account Terms:
+              </span>
               <div className="space-y-1 text-slate-700 bg-slate-50 p-3 rounded border border-slate-200">
                 <div className="flex justify-between">
                   <span>Volume Account Tier:</span>
-                  <strong className="text-slate-900">{currentUser.accountTier}</strong>
+                  <strong className="text-slate-900">
+                    {currentUser.accountTier}
+                  </strong>
                 </div>
                 <div className="flex justify-between">
                   <span>Reseller Tax Exemption #:</span>
-                  <strong className="text-blue-700 font-mono">{currentUser.taxExemptNo || 'Exempt'}</strong>
+                  <strong className="text-blue-700 font-mono">
+                    {currentUser.taxExemptNo || "Exempt"}
+                  </strong>
                 </div>
                 <div className="flex justify-between">
                   <span>Approved Payment Terms:</span>
-                  <strong className="text-slate-900">{quote.paymentTerms}</strong>
+                  <strong className="text-slate-900">
+                    {quote.paymentTerms}
+                  </strong>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping Freight:</span>
-                  <strong className="text-slate-900">{quote.shippingMethod}</strong>
+                  <strong className="text-slate-900">
+                    {quote.shippingMethod}
+                  </strong>
                 </div>
               </div>
             </div>
@@ -137,15 +191,27 @@ export const QuoteDocumentModal: React.FC<QuoteDocumentModalProps> = ({
               <tbody className="divide-y divide-slate-200 text-slate-800">
                 {quote.items.map((item, idx) => (
                   <tr key={idx} className="py-2">
-                    <td className="py-2.5 font-mono font-bold text-blue-800">{item.sku}</td>
+                    <td className="py-2.5 font-mono font-bold text-blue-800">
+                      {item.sku}
+                    </td>
                     <td className="py-2.5 font-medium">
                       {item.name}
-                      <span className="block text-[10px] text-slate-500 font-normal">Package: {item.unitOfMeasure}</span>
+                      <span className="block text-[10px] text-slate-500 font-normal">
+                        Package: {item.unitOfMeasure}
+                      </span>
                     </td>
-                    <td className="py-2.5 text-center font-medium">{item.selectedFinish}</td>
-                    <td className="py-2.5 text-center font-bold">{item.quantity}</td>
-                    <td className="py-2.5 text-right font-mono">${item.unitPrice.toFixed(2)}</td>
-                    <td className="py-2.5 text-right font-mono font-bold">${item.totalPrice.toFixed(2)}</td>
+                    <td className="py-2.5 text-center font-medium">
+                      {item.selectedFinish}
+                    </td>
+                    <td className="py-2.5 text-center font-bold">
+                      {item.quantity}
+                    </td>
+                    <td className="py-2.5 text-right font-mono">
+                      ${item.unitPrice.toFixed(2)}
+                    </td>
+                    <td className="py-2.5 text-right font-mono font-bold">
+                      ${item.totalPrice.toFixed(2)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -155,12 +221,15 @@ export const QuoteDocumentModal: React.FC<QuoteDocumentModalProps> = ({
           {/* Pricing Calculation Summary */}
           <div className="flex justify-between items-start pt-4 border-t-2 border-slate-900 text-xs">
             <div className="max-w-xs space-y-2">
-              <span className="font-bold text-slate-900 block">Sales & Project Notes:</span>
+              <span className="font-bold text-slate-900 block">
+                Sales & Project Notes:
+              </span>
               <p className="text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-200 italic">
                 {quote.salesNotes}
               </p>
               <div className="text-[11px] text-slate-500">
-                Estimated Production Lead Time: <strong>{quote.leadTimeDays} Business Days</strong>
+                Estimated Production Lead Time:{" "}
+                <strong>{quote.leadTimeDays} Business Days</strong>
               </div>
             </div>
 
@@ -172,20 +241,28 @@ export const QuoteDocumentModal: React.FC<QuoteDocumentModalProps> = ({
               {quote.volumeDiscountAmount > 0 && (
                 <div className="flex justify-between text-emerald-700 font-semibold">
                   <span>Tier Discount ({quote.volumeDiscountPercent}%):</span>
-                  <span className="font-mono">-${quote.volumeDiscountAmount.toFixed(2)}</span>
+                  <span className="font-mono">
+                    -${quote.volumeDiscountAmount.toFixed(2)}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between text-slate-600">
                 <span>Freight Shipping:</span>
-                <span className="font-mono">${quote.shippingCost.toFixed(2)}</span>
+                <span className="font-mono">
+                  ${quote.shippingCost.toFixed(2)}
+                </span>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>State Tax (Exempt):</span>
-                <span className="font-mono">${quote.estimatedTax.toFixed(2)}</span>
+                <span className="font-mono">
+                  ${quote.estimatedTax.toFixed(2)}
+                </span>
               </div>
               <div className="flex justify-between text-slate-900 font-bold text-sm border-t border-slate-900 pt-2 mt-2">
                 <span>Quote Total:</span>
-                <span className="font-mono text-blue-900">${quote.grandTotal.toFixed(2)}</span>
+                <span className="font-mono text-blue-900">
+                  ${quote.grandTotal.toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
@@ -221,7 +298,8 @@ export const QuoteDocumentModal: React.FC<QuoteDocumentModalProps> = ({
             }}
             className="bg-emerald-800 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-xs text-xs flex items-center gap-2 transition-all"
           >
-            <Send className="w-4 h-4" /> Approve Quote & Submit Official Order to Database
+            <Send className="w-4 h-4" /> Approve Quote & Submit Official Order
+            to Database
           </button>
         </div>
       </div>
