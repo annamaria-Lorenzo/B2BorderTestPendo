@@ -1,0 +1,6 @@
+{
+  "name": "Apex Hardware B2B Sales Intake",
+  "description": "B2B sales intake portal for furniture assembly hardware with AI voice & chat intake agent, automated quote generation, and real-time order tracking.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
