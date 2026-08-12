@@ -1,1 +1,1 @@
-declare var pendo: any;
+declare let pendo: any;
